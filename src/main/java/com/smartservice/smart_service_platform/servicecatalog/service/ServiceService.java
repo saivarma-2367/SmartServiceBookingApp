@@ -19,15 +19,16 @@ public class ServiceService {
 
     public ServiceResponse createService(Authentication authentication, CreateServiceRequest createServiceRequest){
         ServiceEntity service=new ServiceEntity();
+        service.setProviderEmail(authentication.getName());
         service.setName(createServiceRequest.getName());
         service.setDescription(createServiceRequest.getDescription());
         service.setPrice(createServiceRequest.getPrice());
-
+        service.setStatus(ServiceStatus.PENDING);
         return new ServiceResponse(repo.save(service));
     }
 
     public List<ServiceResponse> getApprovedServices(){
-        List<ServiceEntity> serviceEntities=repo.findByStatus("APPROVED");
+        List<ServiceEntity> serviceEntities=repo.findByStatus(ServiceStatus.APPROVED);
         List<ServiceResponse> serviceResponses=new ArrayList<>();
         for(ServiceEntity se:serviceEntities){
             ServiceResponse sr=new ServiceResponse(se);
@@ -43,5 +44,27 @@ public class ServiceService {
             ServiceResponse sr=new ServiceResponse(se);
             serviceResponses.add(sr);
         }return serviceResponses;
+    }
+
+    public List<ServiceResponse> getPendingServices() {
+        return repo.findByStatus(ServiceStatus.PENDING).stream().map(ServiceResponse::new).toList();
+    }
+
+    public ServiceResponse approveService(Long id) {
+        ServiceEntity serviceEntity=repo.findById(id).orElseThrow(()->new RuntimeException("Service Not Found"));
+        serviceEntity.setStatus(ServiceStatus.APPROVED);
+        return new ServiceResponse(repo.save(serviceEntity));
+    }
+
+    public ServiceResponse rejectService(Long id) {
+        ServiceEntity serviceEntity=repo.findById(id).orElseThrow(()->new RuntimeException("Service Not Found"));
+        serviceEntity.setStatus(ServiceStatus.REJECTED);
+        return new ServiceResponse(repo.save(serviceEntity));
+    }
+
+    public ServiceResponse disableService(Long id) {
+        ServiceEntity serviceEntity=repo.findById(id).orElseThrow(()->new RuntimeException("Service Not Found"));
+        serviceEntity.setStatus(ServiceStatus.DISABLED);
+        return new ServiceResponse(repo.save(serviceEntity));
     }
 }
